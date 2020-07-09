@@ -1,5 +1,6 @@
 import numpy as np
-class symp_world(object):
+
+class healtius_env(object):
     def __init__(self, symptomsQuestions, diseases):
         """
         symptomsQuestions: 
@@ -14,7 +15,7 @@ class symp_world(object):
 
         self.possibleActions = list(symptomsQuestions.keys()) + diseases
         self.symptomState = np.zeros(len(symptomsQuestions.keys()))
-
+        self.takenActions = []
     def reset(self):
         pass
 
@@ -34,13 +35,25 @@ class symp_world(object):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
 
-        # resultingState = self.symptomState
-
+        # Update State
         answer = self.getAnswer(action)
-
         index = list(self.symptomsQuestions.keys()).index(action)
         self.symptomState[index] = answer
 
+        # Calculate Reward
+        if action in self.takenActions:
+            reward = -1
+        elif action in self.diseases:
+            reward = 1
+        else: reward = 0
+
+        # Is Terminal State
+        done = action in self.diseases
+
+        # Add Action
+        self.takenActions.append(action)
+
+        
         return self.symptomState, reward, done, None
 
     def getAnswer(self, action):
