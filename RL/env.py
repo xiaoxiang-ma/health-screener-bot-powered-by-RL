@@ -22,7 +22,7 @@ class healtius_env(object):
 
         self.possibleActions = list(self.symptomsQuestions.keys()) + diseases
         self.symptomState = np.zeros(len(self.symptomsQuestions.keys()))
-        self.takenActions = []
+        self.takenActions = set([])
 
     def reset(self):
         """
@@ -31,6 +31,8 @@ class healtius_env(object):
             observation (object): the initial observation.
         """
         self.symptomState = np.zeros(len(self.symptomsQuestions.keys()))
+        self.takenActions = set([])
+        print("RESET -----")
         return self.symptomState
     
     
@@ -50,17 +52,18 @@ class healtius_env(object):
         """
         
         # Update State
-        answer = self.getAnswer(action)
-        index = list(self.symptomsQuestions.keys()).index(action)
-        self.symptomState[index] = answer
+        if action < len(self.symptomsQuestions):
+            answer = self.getAnswer(action)
+    #         index = list(self.symptomsQuestions.keys()).index(action)
+            self.symptomState[action] = answer
 
         # Calculate Reward
         done = False
         if action in self.takenActions:
             reward = -1
-        elif action in self.diseases:
+        elif action > len(self.symptomsQuestions):
             reward = 1
-            print(action)
+            print("diagnosed: ",action)
             done = True
         else: reward = 0
 
@@ -68,7 +71,7 @@ class healtius_env(object):
         # done = action in self.diseases
 
         # Add Action
-        self.takenActions.append(action)
+        self.takenActions.add(action)
 
         
         return self.symptomState, reward, done, None
@@ -80,15 +83,16 @@ class healtius_env(object):
         Assumption:
             user response is an integer
         """
-
-        symptom = self.symptomsQuestions.keys()[action]
-        answer = input(self.symptomsQuestions[symptom])
+#         print(action)
+#         print(list(self.symptomsQuestions.keys()))
+        symptom = list(self.symptomsQuestions.keys())[action]
+        answer = input(self.symptomsQuestions[symptom]+":  ")
         return answer
 
     def render(self):
         print('------------------------------------------')
         print(self.symptomState)
-        print(self.takenActions)
+        print(set(self.takenActions))
         print('------------------------------------------')
 
 
@@ -145,9 +149,74 @@ class DQNAgent:
 
 if __name__ == '__main__':
 
-    symptomsQuestions = { "asthma" : "Have you been diagnosed with asthma?", "sweating_more" : "Are you sweating more than usual?"}
-    diseases = ['diabetes','fever']
-    state_size = 3 ** len(symptomsQuestions.keys())
+    symptomsQuestions = {"symptom0" : "question0",
+                        "symptom1" : "question1",
+                        "symptom2" : "question2",
+                        "symptom3" : "question3",
+                        "symptom4" : "question4",
+                        "symptom5" : "question5",
+                        "symptom6" : "question6",
+                        "symptom7" : "question7",
+                        "symptom8" : "question8",
+                        "symptom9" : "question9",
+                        "symptom10" : "question10",
+                        "symptom11" : "question11",
+                        "symptom12" : "question12",
+                        "symptom13" : "question13",
+                        "symptom14" : "question14",
+                        "symptom15" : "question15",
+                        "symptom16" : "question16",
+                        "symptom17" : "question17",
+                        "symptom18" : "question18",
+                        "symptom19" : "question19",
+                        "symptom20" : "question20",
+                        "symptom21" : "question21",
+                        "symptom22" : "question22",
+                        "symptom23" : "question23",
+                        "symptom24" : "question24",
+                        "symptom25" : "question25",
+                        "symptom26" : "question26",
+                        "symptom27" : "question27",
+                        "symptom28" : "question28",
+                        "symptom29" : "question29",
+                        "symptom30" : "question30",
+                        "symptom31" : "question31",
+                        "symptom32" : "question32",
+                        "symptom33" : "question33",
+                        "symptom34" : "question34",
+                        "symptom35" : "question35",
+                        "symptom36" : "question36",
+                        "symptom37" : "question37",
+                        "symptom38" : "question38",
+                        "symptom39" : "question39",
+                        "symptom40" : "question40"}
+    diseases = ["disease0",
+                "disease1",
+                "disease2",
+                "disease3",
+                "disease4",
+                "disease5",
+                "disease6",
+                "disease7",
+                "disease8",
+                "disease9",
+                "disease10",
+                "disease11",
+                "disease12",
+                "disease13",
+                "disease14",
+                "disease15",
+                "disease16",
+                "disease17",
+                "disease18",
+                "disease19",
+                "disease20",
+                "disease21",
+                "disease22",
+                "disease23",
+                "disease24",
+                "disease25",]
+    state_size = len(symptomsQuestions.keys())
     action_size = len(symptomsQuestions.keys()) + len(diseases)
     batch_size = 32
     n_episodes = 1001 # n games we want agent to play (default 1001)
@@ -157,12 +226,14 @@ if __name__ == '__main__':
 
     agent = DQNAgent(state_size, action_size) # initialise agent
     env = healtius_env(symptomsQuestions, diseases)
-    
+
     done = False
+
+    
     for e in range(n_episodes): # iterate over new episodes of the game
         state = env.reset() # reset state at start of each new episode of the game
         state = np.reshape(state, [1, state_size])
-        
+
         for time in range(100):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
             env.render()
             action = agent.act(state) # action is either 0 or 1 (move cart left or right); decide on one or other here
