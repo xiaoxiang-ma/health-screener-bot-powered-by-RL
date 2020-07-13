@@ -86,7 +86,7 @@ class healtius_env(object):
 #         print(action)
 #         print(list(self.symptomsQuestions.keys()))
         symptom = list(self.symptomsQuestions.keys())[action]
-        answer = input(self.symptomsQuestions[symptom]+":  ")
+        answer = input(self.symptomsQuestions[symptom]+"(Answer 1 or -1): ")
         return answer
 
     def render(self):
