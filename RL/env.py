@@ -1,3 +1,4 @@
+
 import random
 import gym
 import numpy as np
@@ -23,6 +24,7 @@ class healtius_env(object):
         self.possibleActions = list(self.symptomsQuestions.keys()) + diseases
         self.symptomState = np.zeros(len(self.symptomsQuestions.keys()))
         self.takenActions = set([])
+        self.trueDiagnosis = 0
 
         self.stepcount = 0 # To keep track of number of questions asked
 
@@ -36,8 +38,9 @@ class healtius_env(object):
         self.takenActions = set([])
         self.stepcount = 0
         print("\n########################## STATE RESET ##########################\n\n")
-        return self.symptomState
-    
+        self.trueDiagnosis = input("(Enter 1 for Anemia, 2 for Hyperthyroidism or 3 for Viral upper respiratory tract infection): ")
+        return self.symptomState, self.trueDiagnosis
+
     
     def step(self, action):
         """
@@ -63,10 +66,19 @@ class healtius_env(object):
         done = False
         if action in self.takenActions: # repeated action
             reward = -1
+            print("REPEATED QUESTION !! ")
+            done = True
+        elif len(self.takenActions) > 11:
+            reward = -1
+            print("Too many queations !")
+            done = True
         elif action >= len(self.symptomsQuestions): # terminal action / terminal state
-            reward = 1
-            # diseaseNum = action - len(self.symptomsQuestions)
-            print("diagnosed: ",action - len(self.symptomsQuestions)+ 1)
+            if (action - len(self.symptomsQuestions) + 1) == self.trueDiagnosis:
+              reward = 1
+              print("DIAGNOSED CORRECTLY !! ",self.trueDiagnosis)
+            else:
+              reward = -1
+              print("FALSE DIAGNOSIS !! ",self.trueDiagnosis,"instead got: ", (action - len(self.symptomsQuestions) + 1))
             done = True
         else: reward = 0
 
@@ -86,7 +98,11 @@ class healtius_env(object):
         """
 #         print(action)
         symptom = list(self.symptomsQuestions.keys())[action]
-        answer = input(self.symptomsQuestions[symptom]+"(Answer 1 or -1): ")
+        while True:
+          answer = input(self.symptomsQuestions[symptom]+"(Answer 1 or -1): ")
+          if answer not in ("1","-1"):
+            print("Invalid answer, please try again")
+          else: break
         return answer
 
     def render(self):
@@ -150,28 +166,66 @@ class DQNAgent:
 
 if __name__ == '__main__':
 
-    symptomsQuestions = {"symptom0" : "question0",
-                        "symptom1" : "question1",
-                        "symptom2" : "question2",
-                        "symptom3" : "question3",
-                        "symptom4" : "question4",
-                        "symptom5" : "question5",
-                        "symptom6" : "question6",
-                        "symptom7" : "question7",
-                        "symptom8" : "question8",
-                        "symptom9" : "question9",
-                        "symptom10" : "question10",
+    symptomsQuestions = {"cough" : "Do you have a cough?",
+                        "cough_color" : "Are you coughing up yellow, green or brown phlegm ?",
+                        "cough_blood" : "Are you coughing up blood?",
+                        "duration_hours" : "Have you had your complaints for hours ?",
+                        "duration_days" : "Have you had your complaints for days ?",
+                        "duration_weeks" : "Have you had your complaints for weeks ?",
+                        "duration_months" : "Have you had your complaints for months ?",
+                        "history_smoking" : "Do you smoke ?",
+                        "history_allergy" : "Do you have a history of allergies, asthma,eczema ?",
+                        "history_chestpain" : "Do you have any chest pain ?",
+                        "history_immunity" : "Do you have a significantly weakned immunes system due to an existing condition or from taking medication ?",
+                        "history_tired" : "Are you feeling tired, unwell, lethargic or run down ?",
+                        "nose_blocked" : "Do you have blocked or stuffy nose ?",
+                        "nose_runny" : "Do you have running or dripping nose ?",
+                        "nose_sneeze" : "Do you have sneezing more than usual ?",
+                        "nose_smell" : "Can  you smell things as well as normal ?",
+                        "swallow_difficulty" : "Are you finding it difficult to swallow or having painful to swallow ?",                         
+                        "swallow_solidfood" : "Are you having trouble swallowing solid food ?",                         
+                        "swallow_fluids" : "Are you having trouble swallowing fluids ?",                         
+                        "headache" : "Do you have a headache ?",                         
+                        "headache_worst" : "Is the worst headache you can imagine ? ",
+                        "headache_gradual" : "Did your headache start gradually ?",
+                        "headache_sudden" : "Did your headache start very suddenly?",
+                        "headache_discontinous" : "Does your headache come and go ?",
+                        "headache_continous" : "Does your headache continue without interruption?",
+                        "headache_neck" : "Do you have any problems moving your neck ?",
+                        "headache_speech" : "Have you had any speech problems or noticed changes to your voice ?",
+                        "headache_muscle" : "Have you noticed any abnormal muscle weakness lately ?",
+                        "headache_vision" : "Have you noticed any change to your vision ?",
+                        "headache_confused" : "Are you feeling confused or unable to remember things ?",                                     
+                        "fever" : "Do you have a fever ?",                                     
+                        "fever37" : "Is body temperature lower than  37 degree?",                                     
+                        "fever38" : "Is body temperature between 37-38 degrees?",                                     
+                        "fever40" : "Is body temperature between 38-40 degrees?",                                     
+                        "fever41" : "Is body temperature greater than 40 degree?",                                     
+                        "facepain" : "Do you have any pain in your face ?",                                     
+                        "facepain_sinus" : "Is pain in your sinus ?",                                     
+                        "musclepain" : "Do your muscles ache ?",
+                        "jointpain" : "Do you have joint or bone pain in several areas of your body ?",                           
+                        "throat" : "Do you have a sore throat ?",  
+                        "throat_red" : "Do you have redness at the back of your throat?",  
+                        "throat_tonsils" : "Do you have swollen tonsils?",  
+                        "throat_white" : "Do you have white spots on your tonsils?",  
+                        "throat_lump" : "Do you have lump in your throat?",  
+                        "lung" : "Are you currently diagnosed with any of lung disorders?",  
+                        "breathing" : "Have you experienced any difficulty breathing",  
+                        "breathing_better" : "Is your difficulty breathing getting better ?",  
+                        "breathing_same" : "Is your difficulty breathing staying the same ?",  
+                        "breathing_worse" : "Is your difficulty breathing getting worse ?",  
+                        "breathing_blue" : "Have your hands and feet gone blue",  
+                        "breathing_sound" : "Have you noticed your breathing sounds wheezy or noisy"
                      }
-    diseases = ["disease0",
-                "disease1",
-                "disease2",
-                "disease3",
-                "disease4",
-                "disease5"]
+   
+    diseases = ["Anemia",
+                "Hyperthyroidism",
+                "Viral upper respiratory tract infection"]
     state_size = len(symptomsQuestions.keys())
     action_size = len(symptomsQuestions.keys()) + len(diseases)
     batch_size = 32
-    n_episodes = 1001 # n games we want agent to play (default 1001)
+    n_episodes = 5 # n times we want agent to train (default 1001)
     output_dir = 'model_output/v0/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -179,18 +233,23 @@ if __name__ == '__main__':
     agent = DQNAgent(state_size, action_size) # initialise agent
     env = healtius_env(symptomsQuestions, diseases)
 
+    # Load weights
+    weights_file_name = input("Enter most recent model file name: ")
+    agent.load(output_dir + weights_file_name)
+
+
     done = False
 
     
     for e in range(n_episodes): # iterate over new episodes of the game
-        state = env.reset() # reset state at start of each new episode of the game
+        [state,_] = env.reset() # reset state at start of each new episode of the game
         state = np.reshape(state, [1, state_size])
 
-        for time in range(100):  # time represents a frame of the game; goal is to keep pole upright as long as possible up to range, e.g., 500 or 5000 timesteps
+        for time in range(100):  # do we need this? 
             env.render()
-            action = agent.act(state) # action is either 0 or 1 (move cart left or right); decide on one or other here
-            next_state, reward, done, _ = env.step(action) # agent interacts with env, gets feedback; 4 state data points, e.g., pole angle, cart position        
-            reward = reward if not done else 10 # reward +1 for each additional frame with pole upright        
+            action = agent.act(state) # agent picks an action
+            next_state, reward, done, _ = env.step(action) # agent interacts with env, gets feedback       
+            #reward = reward if not done else 10        
             next_state = np.reshape(next_state, [1, state_size])
             agent.remember(state, action, reward, next_state, done) # remember the previous timestep's state, actions, reward, etc.        
             state = next_state # set "current state" for upcoming iteration to the current next state        
