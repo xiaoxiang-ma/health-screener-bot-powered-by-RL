@@ -5,7 +5,7 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-import os # for creating directories
+import os
 
 class healtius_env(object):
     def __init__(self, symptomsQuestions, diseases):
@@ -24,6 +24,8 @@ class healtius_env(object):
         self.symptomState = np.zeros(len(self.symptomsQuestions.keys()))
         self.takenActions = set([])
 
+        self.stepcount = 0 # To keep track of number of questions asked
+
     def reset(self):
         """
         Resets the state of the environment and returns an initial observation.
@@ -32,47 +34,46 @@ class healtius_env(object):
         """
         self.symptomState = np.zeros(len(self.symptomsQuestions.keys()))
         self.takenActions = set([])
-        print("RESET -----")
+        self.stepcount = 0
+        print("\n########################## STATE RESET ##########################\n\n")
         return self.symptomState
     
     
     def step(self, action):
         """
         Run one timestep of the environment's dynamics. When end of
-        episode is reached, you are responsible for calling `reset()`
+        episode is reached, call `reset()`
         to reset this environment's state.
-        Accepts an action and returns a tuple (observation, reward, done, info).
+        Accepts an action and returns a tuple (observation/state, reward, done, info).
         Args:
             action (object): an action provided by the agent (An integer)
         Returns:
-            observation (object): agent's observation of the current environment (state)
+            observation/state (object): agent's observation of the current environment (state)
             reward (float) : amount of reward returned after previous action
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         
         # Update State
-        if action < len(self.symptomsQuestions):
+        if action < len(self.symptomsQuestions): # action withing "question space" / not ternimal actions
             answer = self.getAnswer(action)
-    #         index = list(self.symptomsQuestions.keys()).index(action)
-            self.symptomState[action] = answer
+            self.symptomState[action] = answer # update state
 
         # Calculate Reward
         done = False
-        if action in self.takenActions:
+        if action in self.takenActions: # repeated action
             reward = -1
-        elif action > len(self.symptomsQuestions):
+        elif action >= len(self.symptomsQuestions): # terminal action / terminal state
             reward = 1
-            print("diagnosed: ",action)
+            # diseaseNum = action - len(self.symptomsQuestions)
+            print("diagnosed: ",action - len(self.symptomsQuestions)+ 1)
             done = True
         else: reward = 0
-
-        # # Is Terminal State
-        # done = action in self.diseases
 
         # Add Action
         self.takenActions.add(action)
 
+        self.stepcount +=1
         
         return self.symptomState, reward, done, None
 
@@ -81,19 +82,19 @@ class healtius_env(object):
         Arg:
             action is an integer
         Assumption:
-            user response is an integer
+            user response is an integer (1,-1) Future: magnitude to indicate severity?
         """
 #         print(action)
-#         print(list(self.symptomsQuestions.keys()))
         symptom = list(self.symptomsQuestions.keys())[action]
         answer = input(self.symptomsQuestions[symptom]+"(Answer 1 or -1): ")
         return answer
 
     def render(self):
-        print('------------------------------------------')
-        print(self.symptomState)
-        print(set(self.takenActions))
-        print('------------------------------------------')
+        print('------------------------------------')
+        print("Step: ", self.stepcount)
+        print("Current state: ", self.symptomState)
+        print("Actions taken: ", set(self.takenActions))
+        print('------------------------------------')
 
 
 class DQNAgent:
@@ -113,7 +114,7 @@ class DQNAgent:
         model = Sequential()
         model.add(Dense(24, input_dim=self.state_size, activation='relu')) # 1st hidden layer; states as input
         model.add(Dense(24, activation='relu')) # 2nd hidden layer
-        model.add(Dense(self.action_size, activation='linear')) # 2 actions, so 2 output neurons: 0 and 1 (L/R)
+        model.add(Dense(self.action_size, activation='linear')) 
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
         return model
@@ -125,7 +126,7 @@ class DQNAgent:
         if np.random.rand() <= self.epsilon: # if acting randomly, take random action
             return random.randrange(self.action_size)
         act_values = self.model.predict(state) # if not acting randomly, predict reward value based on current state
-        return np.argmax(act_values[0]) # pick the action that will give the highest reward (i.e., go left or right?)
+        return np.argmax(act_values[0]) # pick the action that will give the highest reward
 
     def replay(self, batch_size): # method that trains NN with experiences sampled from memory
         minibatch = random.sample(self.memory, batch_size) # sample a minibatch from memory
@@ -160,62 +161,13 @@ if __name__ == '__main__':
                         "symptom8" : "question8",
                         "symptom9" : "question9",
                         "symptom10" : "question10",
-                        "symptom11" : "question11",
-                        "symptom12" : "question12",
-                        "symptom13" : "question13",
-                        "symptom14" : "question14",
-                        "symptom15" : "question15",
-                        "symptom16" : "question16",
-                        "symptom17" : "question17",
-                        "symptom18" : "question18",
-                        "symptom19" : "question19",
-                        "symptom20" : "question20",
-                        "symptom21" : "question21",
-                        "symptom22" : "question22",
-                        "symptom23" : "question23",
-                        "symptom24" : "question24",
-                        "symptom25" : "question25",
-                        "symptom26" : "question26",
-                        "symptom27" : "question27",
-                        "symptom28" : "question28",
-                        "symptom29" : "question29",
-                        "symptom30" : "question30",
-                        "symptom31" : "question31",
-                        "symptom32" : "question32",
-                        "symptom33" : "question33",
-                        "symptom34" : "question34",
-                        "symptom35" : "question35",
-                        "symptom36" : "question36",
-                        "symptom37" : "question37",
-                        "symptom38" : "question38",
-                        "symptom39" : "question39",
-                        "symptom40" : "question40"}
+                     }
     diseases = ["disease0",
                 "disease1",
                 "disease2",
                 "disease3",
                 "disease4",
-                "disease5",
-                "disease6",
-                "disease7",
-                "disease8",
-                "disease9",
-                "disease10",
-                "disease11",
-                "disease12",
-                "disease13",
-                "disease14",
-                "disease15",
-                "disease16",
-                "disease17",
-                "disease18",
-                "disease19",
-                "disease20",
-                "disease21",
-                "disease22",
-                "disease23",
-                "disease24",
-                "disease25",]
+                "disease5"]
     state_size = len(symptomsQuestions.keys())
     action_size = len(symptomsQuestions.keys()) + len(diseases)
     batch_size = 32
@@ -243,7 +195,7 @@ if __name__ == '__main__':
             agent.remember(state, action, reward, next_state, done) # remember the previous timestep's state, actions, reward, etc.        
             state = next_state # set "current state" for upcoming iteration to the current next state        
             if done: # episode ends if agent drops pole or we reach timestep 5000
-                print("episode: {}/{}, score: {}, e: {:.2}" # print the episode's score and agent's epsilon
+                print("episode: {}/{}, steps: {}, e: {:.2}" # print the episode's score and agent's epsilon
                     .format(e, n_episodes, time, agent.epsilon))
                 break # exit loop
         if len(agent.memory) > batch_size:
